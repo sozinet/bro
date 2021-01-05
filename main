@@ -1,82 +1,47 @@
 #!/usr/bin/python
-
 import time
-
 import sys
-
 import RPi.GPIO as GPIO
-
 import os
-
 import Adafruit_DHT
-
 import urllib2
-
 from TSL2581 import TSL2581
 
-
-
 myAPI = "8XMCYIBW1SZCV10K"
-
 baseURL = 'http://api.thingspeak.com/update?api_key=%s' % myAPI
-
 DHTpin = 4
 
-
-
 def getSensorData():
-
-    RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
-
+    try:
+        RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
    
-
     # return dict
-
-    return (str(RHW), str(TW))
-
-
-
-print ('starting...')
-
-try:
-
+        return (str(RHW), str(TW))
+    except:
+        return ('error', 'error')
     
-
+def getTSLSensorData(Light):
+    try:
+        return str(Light.calculate_Lux(2, 148))
+    except:
+        return 'error'
+print ('starting...')
+try:
+    
     Light=TSL2581(0X39, debug=False)
 
-
-
-    #id=Light.Read_ID() & 0xf0
-
-    #print('ID = %#x'%id)
-
-    #Light.Init_TSL2581()
-
-
+    Light.Init_TSL2581()
 
     while True:
-
-      lux  =  Light.calculate_Lux(2, 148)
-
+      lux  =  getTSLSensorData(Light)
       RHW, TW = getSensorData()
-
       f = urllib2.urlopen(baseURL + 
-
                                 "&field1=%s&field2=%s" % (TW, RHW)+
-
                                 "&field3=%s" % (lux))
-
       print(TW + " " + RHW + " " +  lux)
-
       time.sleep(5) 
 
-
-
-except:
-
-    # GPIO.cleanup()
+except Exception as inst:
 
     print ("\nProgram end")
-
     exit()
-
