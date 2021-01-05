@@ -35,12 +35,9 @@ GPIO.setup(RCpin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 def getSensorData():
     RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
-    
-    #Convert from Celius to Farenheit
-    TWF = 9/5*TW+32
    
     # return dict
-    return (str(RHW), str(TW),str(TWF))
+    return (str(RHW), str(TW))
 
 def RCtime(RCpin):
     LT = 0
@@ -59,12 +56,12 @@ def main():
     
     while True:
         try:
-            RHW, TW, TWF = getSensorData()
+            RHW, TW = getSensorData()
             LT = RCtime(RCpin)
             f = urllib2.urlopen(baseURL + 
-                                "&field1=%s&field2=%s&field3=%s" % (TW, TWF, RHW)+
-                                "&field4=%s" % (LT))
-            print (TW + " " + TWF+ " " + RHW + " " + LT)
+                                "&field1=%s&field2=%s" % (TW, RHW)+
+                                "&field3=%s" % (LT))
+            print (TW + " " + RHW + " " + LT)
             
 
             sleep(int(myDelay))
