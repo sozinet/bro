@@ -24,17 +24,27 @@ DHTpin = 4
 
 
 
+def getSensorData():
+
+    RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
+
+   
+
+    # return dict
+
+    return (str(RHW), str(TW))
+
 
 
 print ('starting...')
 
 try:
 
-        Light=TSL2581(0X39, debug=False)
+    
 
-        RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
+    Light=TSL2581(0X39, debug=False)
 
-        return (str(RHW), str(TW))
+
 
     #id=Light.Read_ID() & 0xf0
 
@@ -46,9 +56,15 @@ try:
 
     while True:
 
-        lux  =  Light.calculate_Lux(2, 148) 
+      lux  =  Light.calculate_Lux(2, 148)
 
-        f = urllib2.urlopen(baseURL +"&field1=%s&field2=%s" % (TW, RHW)+ "&field3=%s" % (lux))
+      RHW, TW = getSensorData()
+
+      f = urllib2.urlopen(baseURL + 
+
+                                "&field1=%s&field2=%s" % (TW, RHW)+
+
+                                "&field3=%s" % (lux))
 
       print(TW + " " + RHW + " " +  lux)
 
