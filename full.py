@@ -1,3 +1,6 @@
+"""
+Program
+"""
 import time
 import sys
 import RPi.GPIO as GPIO
@@ -11,10 +14,13 @@ baseURL = 'http://api.thingspeak.com/update?api_key=%s' % myAPI
 
 DHTpin = 4
 LEDpin = 17
+FANpin = 27
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(LEDpin, GPIO.OUT)
 GPIO.output(LEDpin, GPIO.LOW)
+GPIO.setup(FANpin, GPIO.OUT)
+GPIO.output(FANpin, GPIO.LOW)
 GPIO.setup(DHTpin, GPIO.IN)
 
 def getSensorData():
@@ -48,16 +54,23 @@ try:
       
 #zapalenie swiatla przy zbyt malym oswiatleniu
       LT=int(lux)
-      if LT <= 10:
+      if LT >= 10:
         GPIO.output(LEDpin, GPIO.HIGH)
       else:
         GPIO.output(LEDpin, GPIO.LOW)
+
+#wlaczenie wentylatora przy zbyt uze temperaturze lub wilotnosci
+      if TW >= 24 or RHW >=40:
+        GPIO.output(FANpin, GPIO.HIGH)
+      else:
+        GPIO.output(FANpin, GPIO.LOW)
         
 #timer odszytu danych z czujnikow (sekundy)
       time.sleep(5)
 
-except Exception as inst:
-    
+#except Exception as inst:
+except KeyboardInterrupt:
+     
     print ("\nProgram end")
     exit()
 finally:
