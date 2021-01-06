@@ -1,74 +1,64 @@
-"""
-My First Internet of Things
-
-Temperature/Humidity Light monitor using Raspberry Pi, DHT11, and photosensor 
-Data is displayed at thingspeak.com
-2015/06/15
-SolderingSunday.com
-
-Based on project by Mahesh Venkitachalam at electronut.in
-
-"""
-# Import all the libraries we need to run
+import time
 import sys
 import RPi.GPIO as GPIO
 import os
-from time import sleep
 import Adafruit_DHT
 import urllib2
+from TSL2581 import TSL2581
 
-
-
-DEBUG = 1
-# Setup the pins we are connect to
-RCpin = 24
-DHTpin = 4
-
-#Setup our API and delay
 myAPI = "8XMCYIBW1SZCV10K"
-myDelay = 15 #how many seconds between posting data
+baseURL = 'http://api.thingspeak.com/update?api_key=%s' % myAPI
+
+DHTpin = 4
+LEDpin = 17
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(RCpin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-
-
+GPIO.setup(LEDpin, GPIO.OUT)
+GPIO.output(LEDpin, GPIO.LOW)
+GPIO.setup(DHTpin, GPIO.IN)
 
 def getSensorData():
-    RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
+    try:
+        RHW, TW = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHTpin)
    
     # return dict
-    return (str(RHW), str(TW))
+        return (str(RHW), str(TW))
+    except:
+        return ('error', 'error')
+    
+def getTSLSensorData(Light):
+    try:
+        return str(Light.calculate_Lux(2, 148))
+    except:
+        return 'error'
+print ('starting...')
+try:
+    
+    Light=TSL2581(0X39, debug=False)
 
-def RCtime(RCpin):
-    LT = 0
-    
-    if (GPIO.input(RCpin) == True):
-        LT += 1
-    return (str(LT))
-    
-# main() function
-def main():
-    
-    print ('starting...')
+    Light.Init_TSL2581()
 
-    baseURL = 'http://api.thingspeak.com/update?api_key=%s' % myAPI
-    print (baseURL)
-    
     while True:
-        try:
-            RHW, TW = getSensorData()
-            LT = RCtime(RCpin)
-            f = urllib2.urlopen(baseURL + 
+      lux  =  getTSLSensorData(Light)
+      RHW, TW = getSensorData()
+      f = urllib2.urlopen(baseURL + 
                                 "&field1=%s&field2=%s" % (TW, RHW)+
-                                "&field3=%s" % (LT))
-            print (TW + " " + RHW + " " + LT)
-            
+                                "&field3=%s" % (lux))
+      print(TW + " " + RHW + " " +  lux)
+      
+#zapalenie swiatla przy zbyt malym oswiatleniu
+      LT=int(lux)
+      if LT <= 10:
+        GPIO.output(LEDpin, GPIO.HIGH)
+      else:
+        GPIO.output(LEDpin, GPIO.LOW)
+        
+#timer odszytu danych z czujnikow (sekundy)
+      time.sleep(5)
 
-            sleep(int(myDelay))
-        except:
-            print ('exiting.')
-            break
-
-# call main
-if __name__ == '__main__':
-    main()
+except Exception as inst:
+    
+    print ("\nProgram end")
+    exit()
+finally:
+    GPIO.cleanup() 
